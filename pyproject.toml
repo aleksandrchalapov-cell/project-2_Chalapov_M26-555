@@ -1,7 +1,7 @@
 [project]
 name = "primitive-db"
 version = "0.1.0"
-description = "Add your description here"
+description = "A console app that imitates a simple database."
 readme = "README.md"
 authors = [
     { name = "Aleksandr Chalapov", email = "268932756+aleksandrchalapov-cell@users.noreply.github.com" }
