@@ -1,4 +1,6 @@
 import prompt
+
+
 def print_help() -> None:
     """Print the list of available commands."""
     print("<command> exit - выйти из программы")
