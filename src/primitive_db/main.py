@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from primitive_db.engine import welcome
+from primitive_db.engine import run
 
 
 def main() -> None:
-    """Entry point for the project console script."""
-    welcome()
+    """Entry point for the database console script."""
+    run()
 
 
 if __name__ == "__main__":
