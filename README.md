@@ -4,6 +4,10 @@
 
 автор: Чалапов Александр Андреевич, группа М26-555.
 
+## Демонстрация
+
+[![asciicast](https://asciinema.org/a/FrVXLlcv9sDgSQbZ.svg)](https://asciinema.org/a/FrVXLlcv9sDgSQbZ)
+
 ## Установка
 
 Нужен [uv](https://docs.astral.sh/uv/). Python 3.12 uv при отсутствие качает сам,
