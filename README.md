@@ -6,7 +6,13 @@
 
 ## Демонстрация
 
+Установка и управление таблицами:
+
 [![asciicast](https://asciinema.org/a/FrVXLlcv9sDgSQbZ.svg)](https://asciinema.org/a/FrVXLlcv9sDgSQbZ)
+
+CRUD-операции:
+
+[![asciicast](https://asciinema.org/a/dLP6xFvwaaTRE1Dk.svg)](https://asciinema.org/a/dLP6xFvwaaTRE1Dk)
 
 ## Установка
 
