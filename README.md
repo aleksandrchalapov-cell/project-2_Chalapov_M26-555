@@ -14,6 +14,10 @@ CRUD-операции:
 
 [![asciicast](https://asciinema.org/a/dLP6xFvwaaTRE1Dk.svg)](https://asciinema.org/a/dLP6xFvwaaTRE1Dk)
 
+Декораторы: время выполнения, кэш, обработка ошибок и подтверждение удаления:
+
+[![asciicast](https://asciinema.org/a/N51tiCS8bmafWlCP.svg)](https://asciinema.org/a/N51tiCS8bmafWlCP)
+
 ## Установка
 
 Нужен [uv](https://docs.astral.sh/uv/). Python 3.12 uv при отсутствие качает сам,
