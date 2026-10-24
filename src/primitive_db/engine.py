@@ -1,6 +1,7 @@
 import prompt
 from prettytable import PrettyTable
 
+from primitive_db.constants import COMMANDS, ID_COLUMN, META_FILE, PROMPT
 from primitive_db.core import (
     check_table,
     create_table,
@@ -30,19 +31,6 @@ from primitive_db.utils import (
     save_table_data,
 )
 
-META_FILE = "db_meta.json"
-COMMANDS = (
-    "create_table",
-    "list_tables",
-    "drop_table",
-    "insert",
-    "select",
-    "update",
-    "delete",
-    "info",
-    "exit",
-    "help",
-)
 select_cache = create_cacher()
 
 
@@ -125,12 +113,12 @@ def run_select(metadata, table_name, where_clause):
 @handle_db_errors
 def run_update(metadata, table_name, set_clause, where_clause):
     """Update the records that match the where clause and report their IDs."""
-    if "ID" in set_clause:
-        raise ValueError('Ошибка: Столбец "ID" нельзя изменить.')
+    if ID_COLUMN in set_clause:
+        raise ValueError(f'Ошибка: Столбец "{ID_COLUMN}" нельзя изменить.')
     validate_clause(metadata, table_name, set_clause)
     validate_clause(metadata, table_name, where_clause)
     table_data = load_table_data(table_name)
-    ids = [record["ID"] for record in table_data if matches(record, where_clause)]
+    ids = [record[ID_COLUMN] for record in table_data if matches(record, where_clause)]
     if not ids:
         print("Записи не найдены.")
         return
@@ -144,7 +132,7 @@ def run_delete(metadata, table_name, where_clause):
     """Delete the records that match the where clause and report their IDs."""
     validate_clause(metadata, table_name, where_clause)
     table_data = load_table_data(table_name)
-    ids = [record["ID"] for record in table_data if matches(record, where_clause)]
+    ids = [record[ID_COLUMN] for record in table_data if matches(record, where_clause)]
     if not ids:
         print("Записи не найдены.")
         return
@@ -196,7 +184,7 @@ def run():
     while True:
         metadata = load_metadata(META_FILE)
         try:
-            user_input = prompt.string(">>>Введите команду: ")
+            user_input = prompt.string(PROMPT)
         except (KeyboardInterrupt, EOFError):
             print()
             break

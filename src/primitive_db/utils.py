@@ -1,7 +1,7 @@
 import json
 import os
 
-DATA_DIR = "data"
+from primitive_db.constants import DATA_DIR, JSON_INDENT
 
 
 def load_metadata(filepath):
@@ -16,7 +16,7 @@ def load_metadata(filepath):
 def save_metadata(filepath, data):
     """Save database metadata to a JSON file."""
     with open(filepath, "w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
+        json.dump(data, file, ensure_ascii=False, indent=JSON_INDENT)
 
 
 def table_path(table_name):
@@ -37,7 +37,7 @@ def save_table_data(table_name, data):
     """Save the records of a table, creating the data directory if needed."""
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(table_path(table_name), "w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
+        json.dump(data, file, ensure_ascii=False, indent=JSON_INDENT)
 
 
 def delete_table_data(table_name):
