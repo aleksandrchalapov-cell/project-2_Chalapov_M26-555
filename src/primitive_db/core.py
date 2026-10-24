@@ -1,7 +1,6 @@
+from primitive_db.constants import ID_COLUMN, VALID_TYPES
 from primitive_db.decorators import confirm_action, handle_db_errors, log_time
 from primitive_db.utils import load_table_data
-
-VALID_TYPES = {"int": int, "str": str, "bool": bool}
 
 
 @handle_db_errors
@@ -11,10 +10,10 @@ def create_table(metadata, table_name, columns):
         raise ValueError(f"Некорректное значение: {table_name}. Попробуйте снова.")
     if table_name in metadata:
         raise ValueError(f'Ошибка: Таблица "{table_name}" уже существует.')
-    schema = {"ID": "int"}
+    schema = {ID_COLUMN: "int"}
     for column in columns:
         name, _, column_type = column.partition(":")
-        if name == "ID" and column_type == "int":
+        if name == ID_COLUMN and column_type == "int":
             continue
         if not name or column_type not in VALID_TYPES or name in schema:
             raise ValueError(f"Некорректное значение: {column}. Попробуйте снова.")
@@ -65,7 +64,7 @@ def validate_clause(metadata, table_name, clause):
 def insert(metadata, table_name, values):
     """Add a record with an automatic ID and return the table data."""
     check_table(metadata, table_name)
-    columns = [column for column in metadata[table_name] if column != "ID"]
+    columns = [column for column in metadata[table_name] if column != ID_COLUMN]
     if len(values) != len(columns):
         raise ValueError(
             f"Ошибка: Ожидается значений: {len(columns)}, получено: {len(values)}."
@@ -73,8 +72,8 @@ def insert(metadata, table_name, values):
     record = dict(zip(columns, values))
     validate_clause(metadata, table_name, record)
     table_data = load_table_data(table_name)
-    record_id = max((row["ID"] for row in table_data), default=0) + 1
-    table_data.append({"ID": record_id, **record})
+    record_id = max((row[ID_COLUMN] for row in table_data), default=0) + 1
+    table_data.append({ID_COLUMN: record_id, **record})
     print(f'Запись с ID={record_id} успешно добавлена в таблицу "{table_name}".')
     return table_data
 

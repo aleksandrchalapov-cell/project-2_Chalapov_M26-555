@@ -44,6 +44,16 @@ uv sync
 uv run database
 ```
 
+Те же действия через `make`:
+
+| Команда | Что делает |
+| --- | --- |
+| `make install` | установить зависимости (`uv sync`) |
+| `make run` | запустить базу данных (`uv run database`) |
+| `make lint` | проверить код линтером (`uv run ruff check .`) |
+| `make build` | собрать пакет в `dist/` (`uv build`) |
+| `make package-install` | установить собранный пакет как команду `database` |
+
 ## Управление таблицами 
 
 | Команда | Что делает |
@@ -175,9 +185,23 @@ uv run database
 Таблица "users" успешно удалена.
 ```
 
+## Структура проекта
+
+Модули лежат в `src/primitive_db/`:
+
+| Файл | Что внутри |
+| --- | --- |
+| `main.py` | точка входа: функция `main()` для команды `database` |
+| `engine.py` | цикл команд: разбор ввода и вызов нужных функций |
+| `core.py` | логика базы: таблицы и CRUD-операции |
+| `parser.py` | разбор значений и условий `values`, `where`, `set` |
+| `utils.py` | чтение и запись `db_meta.json` и файлов `data/<имя_таблицы>.json` |
+| `decorators.py` | декораторы `handle_db_errors`, `confirm_action`, `log_time` и кэш `create_cacher` |
+| `constants.py` | константы: имена файлов, типы столбцов, список команд |
+
 ## Проверка качества кода
 
 ```bash
-uv run ruff check .
+make lint  # то же, что uv run ruff check .
 uv run ruff format --check .
 ```

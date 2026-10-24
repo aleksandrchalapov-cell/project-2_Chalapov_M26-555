@@ -1,12 +1,11 @@
-import functools
 import time
 
 
 def handle_db_errors(func):
     """Print database errors raised by func instead of crashing: return None."""
 
-    @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Call func and print the message of a database error if it fails."""
         try:
             return func(*args, **kwargs)
         except FileNotFoundError:
@@ -29,8 +28,10 @@ def confirm_action(action_name):
     """Ask the user to confirm the action before running the function."""
 
     def decorator(func):
-        @functools.wraps(func)
+        """Wrap func with the confirmation question."""
+
         def wrapper(*args, **kwargs):
+            """Ask the question and call func only if the answer is "y"."""
             question = f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: '
             try:
                 answer = input(question)
@@ -50,8 +51,8 @@ def confirm_action(action_name):
 def log_time(func):
     """Print the time taken by func to run."""
 
-    @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Call func, print how long it ran and return its result."""
         start = time.monotonic()
         result = func(*args, **kwargs)
         elapsed = time.monotonic() - start
@@ -66,6 +67,7 @@ def create_cacher():
     cache = {}
 
     def cache_result(key, value_func):
+        """Return the cached value for key, calling value_func only the first time."""
         if key not in cache:
             cache[key] = value_func()
         return cache[key]
