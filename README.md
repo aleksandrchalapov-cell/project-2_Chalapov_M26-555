@@ -12,7 +12,7 @@
 
 CRUD-операции:
 
-[![asciicast](https://asciinema.org/a/dLP6xFvwaaTRE1Dk.svg)](https://asciinema.org/a/dLP6xFvwaaTRE1Dk)
+[![asciicast](https://asciinema.org/a/cZl1OGDDJLzdMfFu.svg)](https://asciinema.org/a/cZl1OGDDJLzdMfFu)
 
 Декораторы: время выполнения, кэш, обработка ошибок и подтверждение удаления:
 
