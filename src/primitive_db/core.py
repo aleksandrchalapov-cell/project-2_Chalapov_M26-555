@@ -1,24 +1,23 @@
+from primitive_db.decorators import confirm_action, handle_db_errors, log_time
 from primitive_db.utils import load_table_data
 
 VALID_TYPES = {"int": int, "str": str, "bool": bool}
 
 
+@handle_db_errors
 def create_table(metadata, table_name, columns):
     """Add a table with an automatic ID:int column and return the metadata."""
     if not table_name.isidentifier():
-        print(f"Некорректное значение: {table_name}. Попробуйте снова.")
-        return None
+        raise ValueError(f"Некорректное значение: {table_name}. Попробуйте снова.")
     if table_name in metadata:
-        print(f'Ошибка: Таблица "{table_name}" уже существует.')
-        return None
+        raise ValueError(f'Ошибка: Таблица "{table_name}" уже существует.')
     schema = {"ID": "int"}
     for column in columns:
         name, _, column_type = column.partition(":")
         if name == "ID" and column_type == "int":
             continue
         if not name or column_type not in VALID_TYPES or name in schema:
-            print(f"Некорректное значение: {column}. Попробуйте снова.")
-            return None
+            raise ValueError(f"Некорректное значение: {column}. Попробуйте снова.")
         schema[name] = column_type
     metadata[table_name] = schema
     described = ", ".join(f"{name}:{kind}" for name, kind in schema.items())
@@ -26,11 +25,11 @@ def create_table(metadata, table_name, columns):
     return metadata
 
 
+@handle_db_errors
+@confirm_action("удаление таблицы")
 def drop_table(metadata, table_name):
     """Remove a table from the metadata and return the metadata."""
-    if table_name not in metadata:
-        print(f'Ошибка: Таблица "{table_name}" не существует.')
-        return None
+    check_table(metadata, table_name)
     del metadata[table_name]
     print(f'Таблица "{table_name}" успешно удалена.')
     return metadata
@@ -44,40 +43,35 @@ def list_tables(metadata):
         print(f"- {table_name}")
 
 
-def table_exists(metadata, table_name):
-    """Return True if the table exists; otherwise print an error."""
-    if table_name in metadata:
-        return True
-    print(f'Ошибка: Таблица "{table_name}" не существует.')
-    return False
+def check_table(metadata, table_name):
+    """Raise KeyError if the table does not exist."""
+    if table_name not in metadata:
+        raise KeyError(f'Ошибка: Таблица "{table_name}" не существует.')
 
 
 def validate_clause(metadata, table_name, clause):
-    """Return True if the table has every column and the values fit their types."""
-    if not table_exists(metadata, table_name):
-        return False
+    """Raise an error if a column is missing or a value has the wrong type."""
+    check_table(metadata, table_name)
     schema = metadata[table_name]
     for column, value in clause.items():
         if column not in schema:
-            print(f'Ошибка: Столбец "{column}" не существует.')
-            return False
+            raise KeyError(f'Ошибка: Столбец "{column}" не существует.')
         if type(value) is not VALID_TYPES[schema[column]]:
-            print(f"Некорректное значение: {value!r}. Попробуйте снова.")
-            return False
-    return True
+            raise ValueError(f"Некорректное значение: {value!r}. Попробуйте снова.")
 
 
+@handle_db_errors
+@log_time
 def insert(metadata, table_name, values):
     """Add a record with an automatic ID and return the table data."""
-    if not table_exists(metadata, table_name):
-        return None
+    check_table(metadata, table_name)
     columns = [column for column in metadata[table_name] if column != "ID"]
     if len(values) != len(columns):
-        print(f"Ошибка: Ожидается значений: {len(columns)}, получено: {len(values)}.")
-        return None
+        raise ValueError(
+            f"Ошибка: Ожидается значений: {len(columns)}, получено: {len(values)}."
+        )
     record = dict(zip(columns, values))
-    if not validate_clause(metadata, table_name, record):
-        return None
+    validate_clause(metadata, table_name, record)
     table_data = load_table_data(table_name)
     record_id = max((row["ID"] for row in table_data), default=0) + 1
     table_data.append({"ID": record_id, **record})
@@ -90,6 +84,7 @@ def matches(record, where_clause):
     return all(record.get(column) == value for column, value in where_clause.items())
 
 
+@log_time
 def select(table_data, where_clause=None):
     """Return all records, or only the ones that match the where clause."""
     if where_clause is None:
@@ -105,15 +100,16 @@ def update(table_data, set_clause, where_clause):
     return table_data
 
 
+@confirm_action("удаление записи")
 def delete(table_data, where_clause):
     """Remove every record that matches the where clause."""
     return [record for record in table_data if not matches(record, where_clause)]
 
 
+@handle_db_errors
 def table_info(metadata, table_name):
     """Print the columns and the number of records of a table."""
-    if not table_exists(metadata, table_name):
-        return
+    check_table(metadata, table_name)
     schema = metadata[table_name]
     described = ", ".join(f"{name}:{kind}" for name, kind in schema.items())
     print(f"Таблица: {table_name}")

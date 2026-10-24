@@ -2,16 +2,19 @@ import prompt
 from prettytable import PrettyTable
 
 from primitive_db.core import (
+    check_table,
     create_table,
     delete,
     drop_table,
     insert,
     list_tables,
+    matches,
     select,
     table_info,
     update,
     validate_clause,
 )
+from primitive_db.decorators import create_cacher, handle_db_errors
 from primitive_db.parser import (
     parse_condition,
     parse_set,
@@ -40,6 +43,7 @@ COMMANDS = (
     "exit",
     "help",
 )
+select_cache = create_cacher()
 
 
 def print_help():
@@ -89,44 +93,65 @@ def print_records(metadata, table_name, records):
     print(table)
 
 
+def save_records(table_name, table_data):
+    """Save the records of a table and forget the cached select results."""
+    save_table_data(table_name, table_data)
+    select_cache.clear()
+
+
+@handle_db_errors
+def run_drop(metadata, table_name):
+    """Drop an existing table after confirmation, together with its records."""
+    check_table(metadata, table_name)
+    new_metadata = drop_table(metadata, table_name)
+    if new_metadata is None:
+        return
+    save_metadata(META_FILE, new_metadata)
+    delete_table_data(table_name)
+    select_cache.clear()
+
+
+@handle_db_errors
 def run_select(metadata, table_name, where_clause):
     """Print the records that match the where clause (all if it is None)."""
-    if not validate_clause(metadata, table_name, where_clause or {}):
-        return
-    records = select(load_table_data(table_name), where_clause)
+    validate_clause(metadata, table_name, where_clause or {})
+    key = (table_name, str(where_clause))
+    records = select_cache(
+        key, lambda: select(load_table_data(table_name), where_clause)
+    )
     print_records(metadata, table_name, records)
 
 
+@handle_db_errors
 def run_update(metadata, table_name, set_clause, where_clause):
     """Update the records that match the where clause and report their IDs."""
     if "ID" in set_clause:
-        print('Ошибка: Столбец "ID" нельзя изменить.')
-        return
-    if not (
-        validate_clause(metadata, table_name, set_clause)
-        and validate_clause(metadata, table_name, where_clause)
-    ):
-        return
+        raise ValueError('Ошибка: Столбец "ID" нельзя изменить.')
+    validate_clause(metadata, table_name, set_clause)
+    validate_clause(metadata, table_name, where_clause)
     table_data = load_table_data(table_name)
-    ids = [record["ID"] for record in select(table_data, where_clause)]
+    ids = [record["ID"] for record in table_data if matches(record, where_clause)]
     if not ids:
         print("Записи не найдены.")
         return
-    save_table_data(table_name, update(table_data, set_clause, where_clause))
+    save_records(table_name, update(table_data, set_clause, where_clause))
     for record_id in ids:
         print(f'Запись с ID={record_id} в таблице "{table_name}" успешно обновлена.')
 
 
+@handle_db_errors
 def run_delete(metadata, table_name, where_clause):
     """Delete the records that match the where clause and report their IDs."""
-    if not validate_clause(metadata, table_name, where_clause):
-        return
+    validate_clause(metadata, table_name, where_clause)
     table_data = load_table_data(table_name)
-    ids = [record["ID"] for record in select(table_data, where_clause)]
+    ids = [record["ID"] for record in table_data if matches(record, where_clause)]
     if not ids:
         print("Записи не найдены.")
         return
-    save_table_data(table_name, delete(table_data, where_clause))
+    new_data = delete(table_data, where_clause)
+    if new_data is None:
+        return
+    save_records(table_name, new_data)
     for record_id in ids:
         print(f'Запись с ID={record_id} успешно удалена из таблицы "{table_name}".')
 
@@ -139,16 +164,13 @@ def execute(metadata, tokens):
             if new_metadata is not None:
                 save_metadata(META_FILE, new_metadata)
         case ["drop_table", table_name]:
-            new_metadata = drop_table(metadata, table_name)
-            if new_metadata is not None:
-                save_metadata(META_FILE, new_metadata)
-                delete_table_data(table_name)
+            run_drop(metadata, table_name)
         case ["list_tables"]:
             list_tables(metadata)
         case ["insert", "into", table_name, "values", *values]:
             table_data = insert(metadata, table_name, parse_values(values))
             if table_data is not None:
-                save_table_data(table_name, table_data)
+                save_records(table_name, table_data)
         case ["select", "from", table_name]:
             run_select(metadata, table_name, None)
         case ["select", "from", table_name, "where", *condition]:
